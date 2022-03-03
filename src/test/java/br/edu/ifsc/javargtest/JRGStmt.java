@@ -1,11 +1,8 @@
-
 package br.edu.ifsc.javargtest;
-
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
@@ -21,13 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
-import net.jqwik.api.EdgeCases;
 import net.jqwik.api.Provide;
-import net.jqwik.api.RandomGenerator;
-import net.jqwik.api.arbitraries.IntegerArbitrary;
 
 public class JRGStmt {
     private ClassTable mCT;
@@ -36,10 +29,7 @@ public class JRGStmt {
     
     private int mFuel;
     
-    
     private JRGBase mBase;
-    
-    private Map<String,String> mCtx;
     
     private List<String> mValidNames;
     
@@ -48,6 +38,8 @@ public class JRGStmt {
     private JRGOperator mOperator; 
     
     public static final int MAX_STMT = 5;
+       
+    public static final int IF_STMT = 1, WHILE_STMT = 2, VAR_DECL_STMT = 3, VAR_DECLARATION_STMT = 4;
     
     public JRGStmt(ClassTable ct , JRGBase base, JRGCore core) {
         mCT = ct;
@@ -57,15 +49,7 @@ public class JRGStmt {
         mCore = core;
         
         mOperator = new JRGOperator(mCT , mBase , mCore);
-        
-        mCtx =  new HashMap<String, String>();
-        
-        mCtx.put("b", "int");
-        
-        mCtx.put("a", "int");
-        
-        mCtx.put("c", "br.edu.ifsc.javargexamples.C");
-        
+     
         List<String> tempNames = Arrays.asList("a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z");
         mValidNames = new LinkedList<>(tempNames);
         
@@ -83,7 +67,7 @@ public class JRGStmt {
     
     //ExpressionStmt
     @Provide
-    public Arbitrary<VariableDeclarationExpr> genVarDecl() throws ClassNotFoundException {
+    public Arbitrary<VariableDeclarationExpr> genVarDecl(Map<String,String> ctx) throws ClassNotFoundException {
         JRGLog.showMessage(JRGLog.Severity.MSG_XDEBUG, "genVarDeclaration::inicio");       
         
         Arbitrary<PrimitiveType> pt = mBase.primitiveTypes().map(
@@ -95,11 +79,10 @@ public class JRGStmt {
         
         Type tp = t.sample();
         
-        mCtx.put(v, tp.asString());
+        ctx.put(v, tp.asString());
         
-        mValidNames.remove(v);        
-                
-        
+        mValidNames.remove(v);     
+       
         JRGLog.showMessage(JRGLog.Severity.MSG_XDEBUG, "genVarDeclaration::fim"); 
         
         //return t.map(tp -> new VariableDeclarationExpr(tp, v));
@@ -107,16 +90,25 @@ public class JRGStmt {
     }
     
    @Provide
-    public  Arbitrary<Statement> genStatement() {
+    public  Arbitrary<Statement> genStatement(Map<String,String> ctx) {
         JRGLog.showMessage(JRGLog.Severity.MSG_XDEBUG, "genStatement::inicio");         
     
         try {
             if(mFuel > 0) {
                 mFuel--;
-                return Arbitraries.oneOf(genIfStmt(), genWhileStmt(),genVarDeclarationStmt(), genVarDeclStmt());
-                
+                Arbitrary<Integer> s = Arbitraries.of(IF_STMT, WHILE_STMT, VAR_DECL_STMT, VAR_DECLARATION_STMT);
+                switch(s.sample()){
+                    case IF_STMT: return Arbitraries.oneOf(genIfStmt(ctx));
+                    case WHILE_STMT: return Arbitraries.oneOf(genWhileStmt(ctx));
+                    case VAR_DECL_STMT: return Arbitraries.oneOf(genVarDeclStmt(ctx));
+                    case VAR_DECLARATION_STMT: return Arbitraries.oneOf(genVarDeclarationStmt(ctx));
+                }      
             }else {
-                return Arbitraries.oneOf(genVarDeclarationStmt(), genVarDeclStmt());
+                Arbitrary<Integer> s = Arbitraries.of(VAR_DECL_STMT, VAR_DECLARATION_STMT);
+                switch(s.sample()){
+                    case VAR_DECLARATION_STMT: return Arbitraries.oneOf(genVarDeclarationStmt(ctx));
+                    case VAR_DECL_STMT: return Arbitraries.oneOf(genVarDeclStmt(ctx));
+                }
             }
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(JRGStmt.class.getName()).log(Level.SEVERE, null, ex);
@@ -128,7 +120,7 @@ public class JRGStmt {
     } 
     
     @Provide
-    public Arbitrary<NodeList<Statement>> genStatementList() {
+    public Arbitrary<NodeList<Statement>> genStatementList(Map<String,String> ctx) {
         JRGLog.showMessage(JRGLog.Severity.MSG_XDEBUG, "genStatementList::inicio");       
         
         int n = Arbitraries.integers().between(1, MAX_STMT).sample();
@@ -136,7 +128,7 @@ public class JRGStmt {
         
         NodeList<Statement> nodes = new NodeList<>();
         for(int i = 0; i < n; i++) {
-            nodes.add(genStatement().sample());
+            nodes.add(genStatement(ctx).sample());
         }
         
         JRGLog.showMessage(JRGLog.Severity.MSG_XDEBUG, "genStatementList::fim");
@@ -145,10 +137,10 @@ public class JRGStmt {
     }      
     
     @Provide
-    public Arbitrary<BlockStmt> genBlockStmt() {
+    public Arbitrary<BlockStmt> genBlockStmt(Map<String,String> ctx) {
         JRGLog.showMessage(JRGLog.Severity.MSG_XDEBUG, "genBlockStmt::inicio");       
         
-        Arbitrary<NodeList<Statement>> l = genStatementList();
+        Arbitrary<NodeList<Statement>> l = genStatementList(ctx);
         
         BlockStmt b = new BlockStmt(l.sample());
         
@@ -159,7 +151,7 @@ public class JRGStmt {
 
     //ExpressionStmt
     @Provide
-    public Arbitrary<VariableDeclarationExpr> genVarDeclAssign() throws ClassNotFoundException {
+    public Arbitrary<VariableDeclarationExpr> genVarDeclAssign(Map<String,String> ctx) throws ClassNotFoundException {
         JRGLog.showMessage(JRGLog.Severity.MSG_XDEBUG, "genVarDeclarator::inicio");
         Arbitrary<PrimitiveType> pt = mBase.primitiveTypes().map(
                 t -> new PrimitiveType(t));
@@ -168,11 +160,11 @@ public class JRGStmt {
         
         Type tp = t.sample();
         
-        Arbitrary<Expression> e = mCore.genExpression(tp);       
+        Arbitrary<Expression> e = mCore.genExpression(ctx, tp);       
        
         String v = Arbitraries.of(mValidNames).sample();
         
-        mCtx.put(v, tp.asString());
+        ctx.put(v, tp.asString());
         
         mValidNames.remove(v);
         
@@ -184,86 +176,96 @@ public class JRGStmt {
     
      //
     @Provide
-    public Arbitrary<VariableDeclarationExpr> genVarAssingStmt() throws ClassNotFoundException{
-        String key = Arbitraries.of(mCtx.keySet()).sample();
+    public Arbitrary<VariableDeclarationExpr> genVarAssingStmt(Map<String,String> ctx) throws ClassNotFoundException{
+        String key = Arbitraries.of(ctx.keySet()).sample();
         
-        String value = mCtx.get(key);
+        String value = ctx.get(key);
         
         Type tp = ReflectParserTranslator
                 .reflectToParserType(value);
         
-        Arbitrary<Expression> e = mCore.genExpression(tp);
+        Arbitrary<Expression> e = mCore.genExpression(ctx, tp);
         
         return e.map(obj -> new VariableDeclarationExpr(
                 new VariableDeclarator(tp, key, obj)));
     }
     
-      @Provide
-    public Arbitrary<AssignExpr> genTypeAssingStmt() throws ClassNotFoundException{
-        String key = Arbitraries.of(mCtx.keySet()).sample();
+    @Provide
+    public Arbitrary<AssignExpr> genTypeAssingStmt(Map<String,String> ctx) throws ClassNotFoundException{
+        String key = Arbitraries.of(ctx.keySet()).sample();
         
-        String value = mCtx.get(key);
+        String value = ctx.get(key);
         
         Type tp = ReflectParserTranslator
                 .reflectToParserType(value);
         
-        Arbitrary<Expression> e = mCore.genExpression(tp);
+        Arbitrary<Expression> e = mCore.genExpression(ctx, tp);
         
-        return e.map(obj -> new AssignExpr(new NameExpr(key),obj, AssignExpr.Operator.ASSIGN
+        return e.map(obj -> new AssignExpr(e.sample(),obj, AssignExpr.Operator.ASSIGN
                 ));
     }
     
+    
     @Provide
-    public Arbitrary<IfStmt> genIfStmt() {
+    public Arbitrary<IfStmt> genIfStmt(Map<String,String> ctx) {
         JRGLog.showMessage(JRGLog.Severity.MSG_XDEBUG, "genIfStmt::inicio");       
         
-        Arbitrary<Expression> e = mCore.genExpression(PrimitiveType.booleanType());       
+        Map<String, String> newCtxIf = new HashMap<String, String>(ctx);
+        Map<String, String> newCtxElse = new HashMap<String, String>(ctx);
+        
+        Arbitrary<Expression> e = mCore.genExpression(ctx, PrimitiveType.booleanType());       
        
         JRGLog.showMessage(JRGLog.Severity.MSG_XDEBUG, "genIfStmt::fim"); 
      
-        return e.map(exp -> new IfStmt(exp, genBlockStmt().sample(), genBlockStmt().sample()));
+        return e.map(exp -> new IfStmt(exp, genBlockStmt(newCtxIf).sample(), genBlockStmt(newCtxElse).sample()));
     }
     
     @Provide
-    public Arbitrary<WhileStmt> genWhileStmt() {
+    public Arbitrary<WhileStmt> genWhileStmt(Map<String,String> ctx) {
         JRGLog.showMessage(JRGLog.Severity.MSG_XDEBUG, "genWhileStmt::inicio");       
                        
-        Arbitrary<Expression> e = mCore.genExpression(PrimitiveType.booleanType());
+        Map<String, String> newCtx = new HashMap<String, String>(ctx);
+        
+        Arbitrary<Expression> e = mCore.genExpression(newCtx, PrimitiveType.booleanType());
         
         JRGLog.showMessage(JRGLog.Severity.MSG_XDEBUG, "genWhileStmt::fim"); 
-        return e.map(exp -> new WhileStmt(exp,genBlockStmt().sample()));
+        return e.map(exp -> new WhileStmt(exp,genBlockStmt(newCtx).sample()));
     }   
     
     @Provide
-    public Arbitrary<ExpressionStmt> genExpressionStmt(){
+    public Arbitrary<ExpressionStmt> genExpressionStmt(Map<String,String> ctx){
         //@TODO: Sortear o tipo aleatoriamente e passar para genExpression
         Arbitrary<PrimitiveType.Primitive> t = mBase.primitiveTypes();
          
-        Arbitrary<Expression> e = mCore.genExpression(ReflectParserTranslator
+        Arbitrary<Expression> e = mCore.genExpression(ctx, ReflectParserTranslator
                 .reflectToParserType(t.sample().toString()));
         
         return e.map(exp -> new ExpressionStmt(exp));
     }
     
     @Provide
-    public Arbitrary<ExpressionStmt> genVarDeclarationStmt() throws ClassNotFoundException{
+    public Arbitrary<ExpressionStmt> genVarDeclarationStmt(Map<String,String> ctx) throws ClassNotFoundException{
          
-        Arbitrary<VariableDeclarationExpr> e = genVarDeclAssign();
+        Arbitrary<VariableDeclarationExpr> e = genVarDeclAssign(ctx);
         
         return e.map(exp -> new ExpressionStmt(exp));
     }
     
     @Provide
-    public Arbitrary<ExpressionStmt> genVarDeclStmt() throws ClassNotFoundException{
+    public Arbitrary<ExpressionStmt> genVarDeclStmt(Map<String,String> ctx) throws ClassNotFoundException{
          
-        Arbitrary<VariableDeclarationExpr> e = genVarDecl();
+        Arbitrary<VariableDeclarationExpr> e = genVarDecl(ctx);
         
         return e.map(exp -> new ExpressionStmt(exp));
     }
     
-  
+    //@TODOS
+    //Atribuição de váriavel genVarAssignStmt
     
-    //@TODO
-    //Atribuição de váriavel genVarAssignStmt 
-    //CompilationUnity
+    
+    //ESQUEMA GENEXPRESSION METHOD EXCLUSIVO
+    //CRIAR CONSTANTES 
+    //ESCOPO DA VÁRIAVEL = SUSSESIVEIS ADICIONAR VÁRIAVEL NO ESCOPO, CÓPIA DO MAP
+    //ESCREVER A INTRODUÇÃO DO TCC 
+   
 }

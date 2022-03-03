@@ -1,0 +1,59 @@
+package br.edu.ifsc.javarg;
+
+import br.edu.ifsc.javargexamples.A;
+import br.edu.ifsc.javargexamples.B;
+import br.edu.ifsc.javargexamples.C;
+import br.edu.ifsc.javargexamples.Aextend;
+import br.edu.ifsc.javargexamples.AextendExtend;
+
+public class MainClass {
+
+    public static void main(String[] args) {
+        if (new br.edu.ifsc.javargexamples.A(-145, -753, false).a3) {
+            if (true) {
+                if (true) {
+                    while (true) {
+                        boolean oy;
+                        if (true) {
+                            char ob;
+                        } else {
+                            while (oy) {
+                                while (true) {
+                                    byte to = 31;
+                                    byte bb = 6;
+                                    char nu;
+                                    br.edu.ifsc.javargexamples.B no;
+                                    boolean nz;
+                                }
+                                br.edu.ifsc.javargexamples.A dr;
+                                boolean fs = false;
+                                br.edu.ifsc.javargexamples.Aextend kz = new br.edu.ifsc.javargexamples.Aextend(20, -381222);
+                            }
+                            br.edu.ifsc.javargexamples.B ej;
+                            byte ph = 85;
+                        }
+                        float qy;
+                    }
+                    br.edu.ifsc.javargexamples.B am = new br.edu.ifsc.javargexamples.B();
+                } else {
+                    byte a = 1;
+                    short u = -107;
+                    br.edu.ifsc.javargexamples.Aextend na = new br.edu.ifsc.javargexamples.Aextend(1428588, 2591583);
+                    byte yg = -128;
+                }
+            } else {
+                int xn;
+                br.edu.ifsc.javargexamples.B kh = new br.edu.ifsc.javargexamples.B();
+                double cb = 1.1170927842351615E188;
+                boolean lf;
+                br.edu.ifsc.javargexamples.Aextend yp;
+            }
+        } else {
+            br.edu.ifsc.javargexamples.Aextend uc;
+            byte rz = -5;
+            byte az;
+            br.edu.ifsc.javargexamples.Aextend ak;
+            br.edu.ifsc.javargexamples.C uw;
+        }
+    }
+}

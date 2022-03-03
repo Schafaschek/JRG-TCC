@@ -5,6 +5,7 @@ import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.Type;
+import java.util.Map;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.Provide;
@@ -27,42 +28,39 @@ public class JRGOperator {
     }
     
     @Provide
-    public Arbitrary<BinaryExpr> genLogiExpression() {
+    public Arbitrary<BinaryExpr> genLogiExpression(Map<String,String> ctx) {
     
-        Arbitrary<Expression> e = mCore.genExpression(PrimitiveType.booleanType());
+        Arbitrary<Expression> e = mCore.genExpression(ctx, PrimitiveType.booleanType());
                       
-        Arbitrary<Expression> ex = mCore.genExpression(PrimitiveType.booleanType());
+        Arbitrary<Expression> ex = mCore.genExpression(ctx, PrimitiveType.booleanType());
                  
         return e.map(exp -> new BinaryExpr(e.sample(), ex.sample(), genLogiOperator().sample()));
         
     }
      
     @Provide
-    public Arbitrary<BinaryExpr> genArithExpression(Type t) {
+    public Arbitrary<BinaryExpr> genArithExpression(Map<String,String> ctx, Type t) {
         
         //String tp = t.asString();
         
-        Arbitrary<Expression> e = mCore.genExpression(ReflectParserTranslator
-                .reflectToParserType(t.toString()));
+        Arbitrary<Expression> e = mCore.genExpression(ctx, ReflectParserTranslator.reflectToParserType(t.toString()));
         
-        Arbitrary<Expression> ex = mCore.genExpression(ReflectParserTranslator
-                .reflectToParserType(t.toString()));
+        Arbitrary<Expression> ex = mCore.genExpression(ctx, ReflectParserTranslator.reflectToParserType(t.toString()));
                  
         return e.map(exp -> new BinaryExpr(exp, ex.sample(), genArithOperator().sample()));
         
     }
      
     @Provide
-    public Arbitrary<BinaryExpr> genRelaExpression() {
+    public Arbitrary<BinaryExpr> genRelaExpression(Map<String,String> ctx) {
         Arbitrary<PrimitiveType.Primitive> t = mBase.primitiveTypesMatematicos();
         
         String tp = t.sample().toString();
         
-        Arbitrary<Expression> e = mCore.genExpression(ReflectParserTranslator
-                .reflectToParserType(tp));        
+        Arbitrary<Expression> e = mCore.genExpression(ctx, ReflectParserTranslator.reflectToParserType(tp));        
         
-        Arbitrary<Expression> ex = mCore.genExpression(ReflectParserTranslator
-                .reflectToParserType(tp));
+        Arbitrary<Expression> ex = mCore.genExpression(ctx, 
+                ReflectParserTranslator.reflectToParserType(tp));
                  
         return e.map(exp -> new BinaryExpr(exp, ex.sample(), genRelaOperator().sample()));
         
