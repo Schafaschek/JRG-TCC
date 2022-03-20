@@ -103,7 +103,7 @@ public class MainTests {
         
         PrettyPrinter printer = new PrettyPrinter();
         
-        try (FileWriter arq = new FileWriter("arquivos.txt");
+        try (FileWriter arq = new FileWriter("MainClass.java");
         
             PrintWriter gravarArq = new PrintWriter(arq)) {
             
